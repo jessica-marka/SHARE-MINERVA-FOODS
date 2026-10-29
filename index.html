@@ -141,6 +141,11 @@ textarea{min-height:70px;resize:vertical}
         <div><label class="lbl">Cantidad de bandejas</label><input data-f="supCant" type="number" inputmode="numeric" min="0" placeholder="Ej: 4"></div>
         <div><label class="lbl">Caras en cada bandeja</label><input data-f="supCaras" type="number" inputmode="numeric" min="0" placeholder="Ej: 33"></div>
       </div>
+      <div class="row">
+        <div class="name">Cortes de fondo</div>
+        <div><label class="lbl">Cortes detrás de cada cara</label><input data-f="cortes" type="number" inputmode="numeric" min="0" placeholder="Ej: 5"></div>
+        <div></div>
+      </div>
       <div class="cap">Capacidad estimada: <b>0 caras</b></div>
       <div class="slot-foto"></div>
     </div>
@@ -417,7 +422,7 @@ function validar() {
     if (!activo(k)) continue;
     const c = card(k), n = EQ[k].nombre, g = f => num(c.querySelector(`[data-f="${f}"]`)?.value);
     if (!g('supCant') || !g('supCaras')) return `${n}: cargá cantidad de bandejas y caras por bandeja.`;
-    if (k === 'local' && !c.querySelector('[data-f="cortes"]').value) return `${n}: cargá los cortes de fondo.`;
+    if (!c.querySelector('[data-f="cortes"]').value) return `${n}: cargá los cortes de fondo.`;
     if (!c._foto) return `${n}: falta sacar la foto.`;
   }
   return null;
