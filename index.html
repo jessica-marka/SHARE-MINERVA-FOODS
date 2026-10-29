@@ -66,6 +66,14 @@ textarea{min-height:70px;resize:vertical}
 #formWrap.locked .lockmsg{display:block}
 #formWrap.locked .blk{opacity:.4;pointer-events:none;filter:grayscale(1);user-select:none}
 .btn-primary:disabled{cursor:not-allowed}
+/* marcas de la competencia */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip input{display:none}
+.chip span{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:var(--field);font-weight:600;cursor:pointer}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip input:checked+span::before{content:'✓'}
+.otra{display:flex;gap:8px;margin-top:12px}
+.otra input{flex:1}
 /* toggle si/no */
 .seg{display:flex;gap:8px}
 .seg label{flex:1}
@@ -193,6 +201,26 @@ textarea{min-height:70px;resize:vertical}
     </div>
   </section>
 
+  <!-- COMPETENCIA -->
+  <section>
+    <div class="sec-title">🏷️ Equipo de frío de la competencia</div>
+    <div class="box">
+      <label class="lbl">¿Hay equipo de frío de la competencia?</label>
+      <div class="seg">
+        <label><input type="radio" name="tieneComp" value="Sí" onchange="toggleComp()"><span>Sí</span></label>
+        <label><input type="radio" name="tieneComp" value="No" onchange="toggleComp()"><span>No</span></label>
+      </div>
+    </div>
+    <div id="eq-comp" class="box" style="display:none">
+      <label class="lbl">¿De qué marcas? (podés marcar varias)</label>
+      <div id="chipsComp" class="chips"></div>
+      <div class="otra">
+        <input id="otraComp" placeholder="Agregar otra competencia" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarComp()}">
+        <button class="btn btn-ghost" type="button" onclick="agregarComp()">＋ Agregar</button>
+      </div>
+    </div>
+  </section>
+
   <!-- OBSERVACIONES -->
   <section>
     <div class="sec-title">📝 Observaciones generales</div>
@@ -225,6 +253,8 @@ textarea{min-height:70px;resize:vertical}
 /* ====== CONFIGURACIÓN ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxkCFleUrJCIcYSxomYWU1jZcrgRrZZmxNkGpG2e3J71UK9mWq0U0_d7SSRguIhZU3_/exec';   // termina en /exec
 const MARCA_PROPIA = 'Minerva Foods';
+// Marcas de la competencia que aparecen para marcar (el promotor puede agregar otras)
+const MARCAS_COMPETENCIA = ['Chorti', 'Biggie', 'Neuland'];
 const RADIO_M = 150;   // radio por defecto si el PDV no tiene "Radio (m)" en la lista
 
 /* ====== utilidades ====== */
@@ -425,6 +455,28 @@ function comprimir(file, max = 1280, q = 0.7) {
   });
 }
 
+/* ====== competencia ====== */
+function chipComp(nombre, marcado = false) {
+  const l = document.createElement('label'); l.className = 'chip';
+  l.innerHTML = `<input type="checkbox" value="${esc(nombre)}"${marcado ? ' checked' : ''}><span>${esc(nombre)}</span>`;
+  $('#chipsComp').appendChild(l);
+}
+function prepararComp() {
+  $('#chipsComp').innerHTML = ''; $('#otraComp').value = '';
+  MARCAS_COMPETENCIA.forEach(m => chipComp(m));
+}
+function agregarComp() {
+  const v = $('#otraComp').value.trim().replace(/\s+/g, ' ');
+  if (!v) return;
+  const ya = [...document.querySelectorAll('#chipsComp input')].find(i => i.value.toLowerCase() === v.toLowerCase());
+  if (ya) ya.checked = true; else chipComp(v, true);
+  $('#otraComp').value = '';
+}
+const marcasComp = () => [...document.querySelectorAll('#chipsComp input:checked')].map(i => i.value);
+function toggleComp() {
+  $('#eq-comp').style.display = document.querySelector('input[name="tieneComp"]:checked')?.value === 'Sí' ? 'block' : 'none';
+}
+
 /* ====== validación y armado ====== */
 function validar() {
   if (!SEL) return 'Todavía no estás en un PDV.';
@@ -437,6 +489,9 @@ function validar() {
     if (!c.querySelector('[data-f="cortes"]').value) return `${n}: cargá los cortes de fondo.`;
     if (!c._foto) return `${n}: falta sacar la foto.`;
   }
+  const comp = document.querySelector('input[name="tieneComp"]:checked')?.value;
+  if (!comp) return '¿Hay equipo de frío de la competencia? Marcá Sí o No.';
+  if (comp === 'Sí' && !marcasComp().length) return 'Marcá al menos una marca de la competencia.';
   return null;
 }
 
@@ -460,6 +515,8 @@ function armar() {
     gpsLat: POS?.lat ?? '', gpsLng: POS?.lng ?? '', gpsPrec: POS?.acc ?? '',
     distancia: d ?? '', enRango: d == null ? 'Sin dato' : (d <= radio(SEL) ? 'Sí' : 'No'),
     tieneMinerva: respuesta('minerva'), tieneLocal: respuesta('local'),
+    tieneComp: document.querySelector('input[name="tieneComp"]:checked')?.value || '',
+    marcasComp: marcasComp(),
     obs: $('#obs').value.trim(), equipos
   };
 }
@@ -468,8 +525,9 @@ function limpiar() {
   SEL = null;
   bloquear(true);
   $('#obs').value = '';
-  document.querySelectorAll('input[name="tieneMinerva"], input[name="tieneLocal"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input[name="tieneMinerva"], input[name="tieneLocal"], input[name="tieneComp"]').forEach(r => r.checked = false);
   Object.keys(EQ).forEach(k => { prepararEquipo(k); toggleEq(k); });
+  prepararComp(); toggleComp();
   evaluar();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -546,6 +604,7 @@ setInterval(procesarCola, 60000);
 
 /* ====== inicio ====== */
 Object.keys(EQ).forEach(k => { prepararEquipo(k); toggleEq(k); });
+prepararComp(); toggleComp();
 estadoRed();
 cargarPdvs();
 vigilarGps();
