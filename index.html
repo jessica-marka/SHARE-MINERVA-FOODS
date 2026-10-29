@@ -84,6 +84,17 @@ textarea{min-height:70px;resize:vertical}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));z-index:10}
 .bar .in{max-width:820px;margin:0 auto;display:flex;gap:10px;align-items:center}
 .pend{display:none;background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:14px;justify-content:space-between;align-items:center;gap:10px}
+/* pantalla de envío */
+#envio{position:fixed;inset:0;background:var(--bg);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center}
+#envio.show{display:flex}
+#envio .spin{width:54px;height:54px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--accent);animation:girar .8s linear infinite}
+#envio .ico{font-size:56px;line-height:1;display:none}
+#envio b{font-size:20px}
+#envio p{margin:0;color:var(--muted);font-size:15px;max-width:320px}
+#envio.ok .spin,#envio.warn .spin,#envio.err .spin{display:none}
+#envio.ok .ico,#envio.warn .ico,#envio.err .ico{display:block}
+#envio.ok b{color:var(--ok)}#envio.warn b{color:var(--warn)}#envio.err b{color:var(--err)}
+@keyframes girar{to{transform:rotate(360deg)}}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);max-width:92vw;padding:11px 16px;border-radius:12px;font-weight:600;font-size:14px;display:none;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.12)}
 #toast.ok{background:var(--ok-soft);color:var(--ok)}
 #toast.warn{background:var(--warn-soft);color:var(--warn)}
@@ -200,6 +211,7 @@ textarea{min-height:70px;resize:vertical}
   </div>
 </div>
 <div id="toast"></div>
+<div id="envio" role="status" aria-live="polite"><div class="spin"></div><div class="ico"></div><b></b><p></p></div>
 
 <template id="tplFoto">
   <div class="field foto">
@@ -481,26 +493,45 @@ async function enviar() {
   if (p.enRango === 'Sin dato' && !confirm('No se registró tu ubicación. ¿Enviar igual?')) return;
   COLA.push(p); persistir();
   marcarHecho(p.pdvId);
+  pantallaEnvio('cargando', 'Enviando relevamiento…', 'No cierres esta pantalla.');
   limpiar();
-  await procesarCola();
+  while (enviando) await new Promise(r => setTimeout(r, 300));   // espera un reintento automático en curso
+  const res = await procesarCola(true);
+  if (res === 'ok') pantallaEnvio('ok', 'Relevamiento enviado', '', '✅');
+  else if (res === 'red') pantallaEnvio('warn', 'Sin conexión', 'El relevamiento quedó guardado en el teléfono y se envía solo cuando vuelva la señal.', '📶');
+  else pantallaEnvio('err', 'No se pudo guardar', res + ' Quedó guardado en el teléfono para reintentar.', '⚠️');
+  setTimeout(() => pantallaEnvio(null), res === 'ok' ? 1800 : 4000);
 }
 
-async function procesarCola() {
-  if (enviando || !COLA.length) { pintarPend(); return; }
+function pantallaEnvio(estado, titulo = '', detalle = '', icono = '') {
+  const el = $('#envio');
+  if (!estado) { el.className = ''; return; }
+  el.className = 'show ' + estado;
+  el.querySelector('b').textContent = titulo;
+  el.querySelector('p').textContent = detalle;
+  el.querySelector('.ico').textContent = icono;
+}
+
+/* Devuelve 'ok', 'red' o el texto del error. silencioso = no mostrar avisos (los muestra la pantalla de envío) */
+async function procesarCola(silencioso = false) {
+  if (enviando || !COLA.length) { pintarPend(); return 'ok'; }
   enviando = true; pintarPend();
+  let res = 'ok';
   while (COLA.length) {
     try {
       const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(COLA[0]) });
       const j = await r.json();
-      if (!j.ok) { toast('Error en Sheets: ' + (j.error || 'desconocido'), 'err'); break; }
+      if (!j.ok) { res = 'Error en Sheets: ' + (j.error || 'desconocido') + '.'; if (!silencioso) toast(res, 'err'); break; }
       COLA.shift(); persistir();
-      toast('Relevamiento guardado ✓');
+      if (!silencioso) toast('Relevamiento pendiente enviado ✓');
     } catch (e) {
-      toast('Sin conexión: queda guardado y se envía solo al volver la señal.', 'warn');
+      res = 'red';
+      if (!silencioso) toast('Sin conexión: los pendientes se envían solos al volver la señal.', 'warn');
       break;
     }
   }
   enviando = false; pintarPend();
+  return res;
 }
 
 function estadoRed() {
