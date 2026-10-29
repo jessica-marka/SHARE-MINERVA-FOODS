@@ -66,18 +66,6 @@ textarea{min-height:70px;resize:vertical}
 #formWrap.locked .lockmsg{display:block}
 #formWrap.locked .blk{opacity:.4;pointer-events:none;filter:grayscale(1);user-select:none}
 .btn-primary:disabled{cursor:not-allowed}
-/* share por marca */
-.share{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
-.share .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
-.share .hd b{font-size:15px}
-.mrow{display:grid;grid-template-columns:1fr 92px 34px;gap:8px;align-items:center;margin-bottom:8px}
-.mrow input[data-m="marca"][readonly]{background:var(--accent-soft);color:var(--accent);font-weight:600;border-color:#b4ddd2}
-.mrow .x{background:none;border:0;font-size:20px;color:var(--err);cursor:pointer;padding:0}
-.mrow.vac input[data-m="marca"]{background:transparent;border-style:dashed;color:var(--muted)}
-.bars{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--field);margin:10px 0 6px}
-.bars span{display:block;height:100%}
-.res{font-size:13.5px;color:var(--label);line-height:1.5}
-.res b{color:var(--text)}
 /* toggle si/no */
 .seg{display:flex;gap:8px}
 .seg label{flex:1}
@@ -124,15 +112,6 @@ textarea{min-height:70px;resize:vertical}
     <button class="btn btn-ghost" style="padding:7px 12px" onclick="procesarCola()">Reintentar</button>
   </div>
 
-  <!-- PROMOTOR -->
-  <section>
-    <div class="sec-title">👤 Promotor</div>
-    <div class="box">
-      <label class="lbl" for="promotor">Nombre y apellido</label>
-      <input id="promotor" placeholder="Ej: Juan Pérez" autocomplete="name">
-    </div>
-  </section>
-
   <!-- PDV -->
   <section>
     <div class="sec-title">📍 Punto de venta</div>
@@ -145,32 +124,6 @@ textarea{min-height:70px;resize:vertical}
   <div id="formWrap" class="locked">
   <p class="lockmsg">🔒 El formulario se habilita cuando estés en un PDV.</p>
   <div class="blk">
-
-  <!-- DATOS DEL PDV -->
-  <section>
-    <div class="sec-title">🏪 Datos del PDV</div>
-    <div class="box">
-      <div class="grid2">
-        <div class="field">
-          <label class="lbl" for="contacto">Encargado / contacto</label>
-          <input id="contacto" placeholder="Ej: María González">
-        </div>
-        <div class="field">
-          <label class="lbl" for="telefono">Teléfono</label>
-          <input id="telefono" type="tel" inputmode="tel" placeholder="Ej: 0981 123 456">
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:0">
-        <label class="lbl" for="canal">Canal</label>
-        <select id="canal">
-          <option value="">Seleccionar…</option>
-          <option>Supermercado</option>
-          <option>Tienda</option>
-          <option>Otro</option>
-        </select>
-      </div>
-    </div>
-  </section>
 
   <!-- EQUIPOS -->
   <section>
@@ -190,7 +143,6 @@ textarea{min-height:70px;resize:vertical}
       </div>
       <div class="cap">Capacidad estimada: <b>0 caras</b></div>
       <div class="slot-foto"></div>
-      <div class="slot-share"></div>
     </div>
   </section>
 
@@ -222,7 +174,6 @@ textarea{min-height:70px;resize:vertical}
       </div>
       <div class="cap">Capacidad estimada: <b>0 caras</b></div>
       <div class="slot-foto"></div>
-      <div class="slot-share"></div>
     </div>
   </section>
 
@@ -239,20 +190,12 @@ textarea{min-height:70px;resize:vertical}
 
 <div class="bar">
   <div class="in">
-    <div class="muted" style="flex:1" id="resumen">Total: 0 caras</div>
+    <div class="muted" style="flex:1" id="resumen">Capacidad total: 0 caras</div>
     <button id="btnEnviar" class="btn btn-primary" onclick="enviar()" disabled>Enviar relevamiento</button>
   </div>
 </div>
 <div id="toast"></div>
 
-<datalist id="dlMarcas"></datalist>
-<template id="tplMarca">
-  <div class="mrow">
-    <input data-m="marca" list="dlMarcas" placeholder="Marca">
-    <input data-m="caras" type="number" inputmode="numeric" min="0" placeholder="Caras">
-    <button class="x" type="button" title="Quitar">×</button>
-  </div>
-</template>
 <template id="tplFoto">
   <div class="field foto">
     <label class="lbl">📷 Foto del equipo (obligatoria)</label>
@@ -260,33 +203,11 @@ textarea{min-height:70px;resize:vertical}
     <img class="foto-prev" alt="Vista previa">
   </div>
 </template>
-<template id="tplShare">
-  <div class="share">
-    <div class="hd"><b>📊 Share por marca</b><span class="muted">Contá las caras de cada marca</span></div>
-    <div class="marcas">
-      <div class="mrow" data-propia="1">
-        <input data-m="marca" readonly>
-        <input data-m="caras" type="number" inputmode="numeric" min="0" placeholder="Caras">
-        <span></span>
-      </div>
-    </div>
-    <button class="btn btn-ghost full" type="button" data-act="marca" style="padding:9px">＋ Agregar marca de la competencia</button>
-    <div class="mrow vac" style="margin-top:10px">
-      <input data-m="marca" value="Espacio vacío" readonly tabindex="-1">
-      <input data-f="vacias" type="number" inputmode="numeric" min="0" placeholder="Caras">
-      <span></span>
-    </div>
-    <div class="bars"></div>
-    <div class="res">Cargá las caras para ver el share.</div>
-  </div>
-</template>
 
 <script>
 /* ====== CONFIGURACIÓN ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwHwMsfLbtPK7zyic3nJ2gLuK2TAdYM3QBdfs4y-g8xnAFMU5HUV8ZPRr5EHgOZkMOG/exec';   // termina en /exec
 const MARCA_PROPIA = 'Minerva Foods';
-// Sugerencias para la competencia (editá esta lista; el promotor también puede escribir otra)
-const MARCAS_COMPETENCIA = ['Frigorífico Concepción', 'Frigochorti', 'Neuland', 'JBS / Friboi', 'Upisa', 'Marca propia del súper'];
 const RADIO_M = 150;   // radio por defecto si el PDV no tiene "Radio (m)" en la lista
 
 /* ====== utilidades ====== */
@@ -315,9 +236,6 @@ function toast(msg, tipo = 'ok') {
 /* ====== estado ====== */
 let PDVS = [], POS = null, SEL = null, eqN = 0;
 
-/* ====== promotor (se recuerda en el teléfono) ====== */
-$('#promotor').value = load('mf_promotor', '');
-$('#promotor').addEventListener('change', e => save('mf_promotor', e.target.value.trim()));
 
 /* ====== lista de PDV ====== */
 async function cargarPdvs() {
@@ -428,8 +346,6 @@ function evaluar() {
 function seleccionar(id) {
   SEL = PDVS.find(p => String(p.id) === String(id));
   if (!SEL) return;
-  const opt = [...$('#canal').options].find(o => o.value && o.value.toLowerCase() === String(SEL.canal || '').toLowerCase());
-  if (opt) $('#canal').value = opt.value;
   bloquear(false);
   evaluar();
 }
@@ -447,18 +363,10 @@ const activo = k => respuesta(k) === 'Sí';
 
 function prepararEquipo(k) {
   const c = card(k);
-  c.querySelector('.slot-foto').innerHTML = ''; c.querySelector('.slot-share').innerHTML = '';
+  c.querySelector('.slot-foto').innerHTML = '';
   c.querySelector('.slot-foto').appendChild($('#tplFoto').content.cloneNode(true));
-  c.querySelector('.slot-share').appendChild($('#tplShare').content.cloneNode(true));
   c.querySelectorAll('input[data-f]').forEach(i => { if (i.type !== 'file') i.value = ''; });
   c._foto = null;
-  c.querySelector('.mrow[data-propia] [data-m="marca"]').value = MARCA_PROPIA;
-  c.querySelector('[data-act="marca"]').onclick = () => {
-    const row = $('#tplMarca').content.cloneNode(true).firstElementChild;
-    row.querySelector('.x').onclick = () => { row.remove(); calc(c); resumen(); };
-    c.querySelector('.marcas').appendChild(row);
-    row.querySelector('[data-m="marca"]').focus();
-  };
   c.querySelector('[data-f="foto"]').addEventListener('change', async e => {
     const f = e.target.files[0], img = c.querySelector('.foto-prev');
     if (!f) { c._foto = null; img.style.display = 'none'; return; }
@@ -478,50 +386,11 @@ function calc(card) {
   const caras = g('supCant') * g('supCaras') + g('infCaras');
   const cortes = caras * g('cortes');
   card.querySelector('.cap').innerHTML = `Capacidad estimada: <b>${caras} caras</b>` + (cortes ? ` · ${cortes} cortes` : '');
-
-  const marcas = [...card.querySelectorAll('.marcas .mrow')].map(r => ({
-    marca: r.querySelector('[data-m="marca"]').value.trim(),
-    caras: num(r.querySelector('[data-m="caras"]').value),
-    propia: r.hasAttribute('data-propia')
-  }));
-  const vacias = g('vacias');
-  const propias = marcas.filter(m => m.propia).reduce((s, m) => s + m.caras, 0);
-  const comp = marcas.filter(m => !m.propia).reduce((s, m) => s + m.caras, 0);
-  const ocupadas = propias + comp, relevadas = ocupadas + vacias;
-  const share = ocupadas ? propias / ocupadas : null;           // share Minerva sobre caras con producto
-  const ocup = relevadas ? ocupadas / relevadas : null;         // ocupación del equipo
-  const propietario = card.dataset.prop === MARCA_PROPIA;
-
-  const bars = card.querySelector('.bars'), res = card.querySelector('.res');
-  if (!bars) return { caras, cortes, marcas, vacias, propias, comp, share, ocup, propietario };
-  if (!relevadas) {
-    bars.innerHTML = ''; res.textContent = 'Cargá las caras para ver el share.';
-  } else {
-    const w = n => (n / relevadas * 100).toFixed(1) + '%';
-    bars.innerHTML = `<span style="width:${w(propias)};background:var(--accent)"></span><span style="width:${w(comp)};background:#d97706"></span><span style="width:${w(vacias)};background:#c4c8cc"></span>`;
-    let t = `Share ${MARCA_PROPIA}: <b>${pct(share)}</b> · Competencia: <b>${pct(share == null ? null : 1 - share)}</b> · Ocupación: <b>${pct(ocup)}</b>`;
-    if (propietario && comp) t += `<br><span style="color:var(--warn)">⚠️ Hay ${comp} caras de la competencia en el equipo de ${MARCA_PROPIA}.</span>`;
-    if (caras && relevadas !== caras) t += `<br><span class="muted">Relevaste ${relevadas} caras · capacidad estimada ${caras}.</span>`;
-    res.innerHTML = t;
-  }
-  return { caras, cortes, marcas, vacias, propias, comp, share, ocup, propietario };
-}
-const pct = x => x == null ? '—' : Math.round(x * 100) + '%';
-function totales() {
-  const r = { propias: 0, comp: 0, propOwn: 0, compOwn: 0, propSh: 0, compSh: 0 };
-  Object.keys(EQ).filter(activo).forEach(key => {
-    const k = calc(card(key));
-    r.propias += k.propias; r.comp += k.comp;
-    if (k.propietario) { r.propOwn += k.propias; r.compOwn += k.comp; }
-    else { r.propSh += k.propias; r.compSh += k.comp; }
-  });
-  const sh = (a, b) => (a + b) ? a / (a + b) : null;
-  r.sharePdv = sh(r.propias, r.comp); r.shareOwn = sh(r.propOwn, r.compOwn); r.shareSh = sh(r.propSh, r.compSh);
-  return r;
+  return { caras, cortes };
 }
 function resumen() {
-  const t = totales();
-  $('#resumen').innerHTML = (t.propias + t.comp) ? `Share ${MARCA_PROPIA} en el PDV: <b>${pct(t.sharePdv)}</b>` : 'Share en el PDV: —';
+  const t = Object.keys(EQ).filter(activo).reduce((s, k) => s + calc(card(k)).caras, 0);
+  $('#resumen').innerHTML = `Capacidad total: <b>${t} caras</b>`;
 }
 
 function comprimir(file, max = 1280, q = 0.7) {
@@ -541,18 +410,15 @@ function comprimir(file, max = 1280, q = 0.7) {
 
 /* ====== validación y armado ====== */
 function validar() {
-  if (!$('#promotor').value.trim()) return 'Completá el nombre del promotor.';
   if (!SEL) return 'Todavía no estás en un PDV.';
   const preguntas = { minerva: '¿Tiene equipo de frío propio de Minerva? Marcá Sí o No.', local: '¿El local tiene equipo de frío propio? Marcá Sí o No.' };
   for (const k of Object.keys(EQ)) {
     if (!respuesta(k)) return preguntas[k];
     if (!activo(k)) continue;
-    const c = card(k), n = EQ[k].nombre, x = calc(c), g = f => num(c.querySelector(`[data-f="${f}"]`)?.value);
+    const c = card(k), n = EQ[k].nombre, g = f => num(c.querySelector(`[data-f="${f}"]`)?.value);
     if (!g('supCant') || !g('supCaras')) return `${n}: cargá cantidad de bandejas y caras por bandeja.`;
     if (k === 'local' && !c.querySelector('[data-f="cortes"]').value) return `${n}: cargá los cortes de fondo.`;
     if (!c._foto) return `${n}: falta sacar la foto.`;
-    if (x.propias + x.comp + x.vacias <= 0) return `${n}: cargá las caras por marca (aunque ${MARCA_PROPIA} tenga 0).`;
-    if (x.marcas.some(m => !m.propia && m.caras > 0 && !m.marca)) return `${n}: falta el nombre de una marca de la competencia.`;
   }
   return null;
 }
@@ -562,27 +428,21 @@ function armar() {
   const equipos = Object.keys(EQ).filter(activo).map(k => {
     const c = card(k);
     const v = f => c.querySelector(`[data-f="${f}"]`)?.value ?? '';
-    const { caras, cortes, marcas, vacias, propias, comp, share, ocup } = calc(c);
+    const { caras, cortes } = calc(c);
     return {
       propiedad: c.dataset.prop,
       supCant: num(v('supCant')), supCaras: num(v('supCaras')),
       infCant: v('infCaras') ? 1 : 0, infCaras: num(v('infCaras')),
       cortes: num(v('cortes')), caras, cortesTot: cortes,
-      marcas: marcas.filter(m => m.propia || m.caras > 0), vacias,
-      carasPropias: propias, carasComp: comp, share, ocupacion: ocup,
       foto: c._foto || null
     };
   });
-  const t = totales();
   return {
     id: uid(), fecha: new Date().toISOString(),
-    promotor: $('#promotor').value.trim(),
     pdvId: SEL.id, pdvNombre: SEL.nombre, cadena: SEL.cadena || '',
     gpsLat: POS?.lat ?? '', gpsLng: POS?.lng ?? '', gpsPrec: POS?.acc ?? '',
     distancia: d ?? '', enRango: d == null ? 'Sin dato' : (d <= radio(SEL) ? 'Sí' : 'No'),
-    contacto: $('#contacto').value.trim(), telefono: $('#telefono').value.trim(),
-    canal: $('#canal').value, tieneMinerva: respuesta('minerva'), tieneLocal: respuesta('local'),
-    sharePdv: t.sharePdv, shareOwn: t.shareOwn, shareSh: t.shareSh,
+    tieneMinerva: respuesta('minerva'), tieneLocal: respuesta('local'),
     obs: $('#obs').value.trim(), equipos
   };
 }
@@ -590,8 +450,7 @@ function armar() {
 function limpiar() {
   SEL = null;
   bloquear(true);
-  ['#contacto', '#telefono', '#obs'].forEach(s => $(s).value = '');
-  $('#canal').value = '';
+  $('#obs').value = '';
   document.querySelectorAll('input[name="tieneMinerva"], input[name="tieneLocal"]').forEach(r => r.checked = false);
   Object.keys(EQ).forEach(k => { prepararEquipo(k); toggleEq(k); });
   evaluar();
@@ -650,7 +509,6 @@ window.addEventListener('offline', estadoRed);
 setInterval(procesarCola, 60000);
 
 /* ====== inicio ====== */
-$('#dlMarcas').innerHTML = MARCAS_COMPETENCIA.map(m => `<option value="${esc(m)}">`).join('');
 Object.keys(EQ).forEach(k => { prepararEquipo(k); toggleEq(k); });
 estadoRed();
 cargarPdvs();
