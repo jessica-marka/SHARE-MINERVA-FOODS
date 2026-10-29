@@ -283,7 +283,7 @@ textarea{min-height:70px;resize:vertical}
 
 <script>
 /* ====== CONFIGURACIÓN ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyAYCBCaq3nJN08l2ZjhDE5UZtrUH7frwWPA59s5WUyGdx8cPF_B8oYVReedZAv0x9B/exec';   // termina en /exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbwHwMsfLbtPK7zyic3nJ2gLuK2TAdYM3QBdfs4y-g8xnAFMU5HUV8ZPRr5EHgOZkMOG/exec';   // termina en /exec
 const MARCA_PROPIA = 'Minerva Foods';
 // Sugerencias para la competencia (editá esta lista; el promotor también puede escribir otra)
 const MARCAS_COMPETENCIA = ['Frigorífico Concepción', 'Frigochorti', 'Neuland', 'JBS / Friboi', 'Upisa', 'Marca propia del súper'];
@@ -323,18 +323,27 @@ $('#promotor').addEventListener('change', e => save('mf_promotor', e.target.valu
 async function cargarPdvs() {
   const cache = load('mf_pdvs', null);
   if (cache) { PDVS = cache.list; $('#infoPdvs').textContent = `${PDVS.length} PDV`; evaluar(); }
+  let detalle = '';
   try {
-    const r = await fetch(API_URL + '?action=pdvs');
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error);
+    let r;
+    try { r = await fetch(API_URL + '?action=pdvs'); }
+    catch { throw new Error('El script no responde o no está compartido con "Cualquier usuario".'); }
+    const txt = await r.text();
+    let j;
+    try { j = JSON.parse(txt); }
+    catch { throw new Error(/accounts\.google|Sign in|Iniciar sesi/i.test(txt) ? 'El script pide iniciar sesión: falta compartirlo con "Cualquier usuario".' : 'El script respondió algo que no es la lista (HTTP ' + r.status + ').'); }
+    if (!j.ok) throw new Error('Error en el script: ' + j.error);
+    if (!j.pdvs || !j.pdvs.length) throw new Error('La pestaña PDVs no tiene PDV activos.');
     PDVS = j.pdvs;
     save('mf_pdvs', { t: Date.now(), list: PDVS });
     $('#infoPdvs').textContent = `${PDVS.length} PDV`;
     evaluar();
   } catch (e) {
+    detalle = e.message;
+    console.error('cargarPdvs:', e);
     if (!cache) {
       $('#infoPdvs').textContent = 'Sin lista de PDV';
-      geoCard('err', '⚠️', 'No se pudo cargar la lista de PDV', 'Revisá la conexión y recargá la página.');
+      geoCard('err', '⚠️', 'No se pudo cargar la lista de PDV', esc(detalle));
     }
   }
 }
