@@ -253,8 +253,11 @@ textarea{min-height:70px;resize:vertical}
 /* ====== CONFIGURACIÓN ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxkCFleUrJCIcYSxomYWU1jZcrgRrZZmxNkGpG2e3J71UK9mWq0U0_d7SSRguIhZU3_/exec';   // termina en /exec
 const MARCA_PROPIA = 'Minerva Foods';
+// Kilos aproximados por corte (mismos valores que en Code.gs)
+const KG_CORTE = 1.1;            // bandejas superiores y equipo Minerva
+const KG_CORTE_INFERIOR = 2.2;   // bandeja inferior del equipo del local
 // Marcas de la competencia que aparecen para marcar (el promotor puede agregar otras)
-const MARCAS_COMPETENCIA = ['Chorti', 'Victoria', 'Neuland'];
+const MARCAS_COMPETENCIA = ['Chorti', 'Biggie', 'Neuland'];
 const RADIO_M = 150;   // radio por defecto si el PDV no tiene "Radio (m)" en la lista
 
 /* ====== utilidades ====== */
@@ -432,12 +435,18 @@ function calc(card) {
   const g = f => num(card.querySelector(`[data-f="${f}"]`)?.value);
   const caras = g('supCant') * g('supCaras') + g('infCaras');
   const cortes = caras * g('cortes');
-  card.querySelector('.cap').innerHTML = `Capacidad estimada: <b>${caras} caras</b>` + (cortes ? ` · ${cortes} cortes` : '');
-  return { caras, cortes };
+  const cortesSup = g('supCant') * g('supCaras') * g('cortes');
+  const cortesInf = g('infCaras') * g('cortes');
+  const kilos = Math.round((cortesSup * KG_CORTE + cortesInf * KG_CORTE_INFERIOR) * 10) / 10;
+  card.querySelector('.cap').innerHTML = `Capacidad estimada: <b>${caras} caras</b>` +
+    (cortes ? ` · ${cortes} cortes · <b>≈ ${fmtKg(kilos)} kg</b>` : '');
+  return { caras, cortes, kilos };
 }
+const fmtKg = n => n.toLocaleString('es-PY', { maximumFractionDigits: 1 });
 function resumen() {
-  const t = Object.keys(EQ).filter(activo).reduce((s, k) => s + calc(card(k)).caras, 0);
-  $('#resumen').innerHTML = `Capacidad total: <b>${t} caras</b>`;
+  const t = Object.keys(EQ).filter(activo).map(k => calc(card(k)));
+  const caras = t.reduce((s, x) => s + x.caras, 0), kilos = Math.round(t.reduce((s, x) => s + x.kilos, 0) * 10) / 10;
+  $('#resumen').innerHTML = `Total: <b>${caras} caras</b>` + (kilos ? ` · <b>≈ ${fmtKg(kilos)} kg</b>` : '');
 }
 
 function comprimir(file, max = 1280, q = 0.7) {
